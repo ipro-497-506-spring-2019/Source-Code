@@ -14,7 +14,7 @@ void loop()
 { 
     lightFunc();
     waterFunc();
-
+    tempFunc();
 }
   
 
@@ -47,7 +47,7 @@ void waterFunc()
     
     if (waterlevel >= WATER_LEVEL_THRESHOLD) 
     {  
-        Particle.publish("water-level-changed", "high");  
+        Particle.publish("water-level", "high");  
     
         // This loop is to keep the reading from bouncing around
         // Once the sensor sees the water to be at a high level
@@ -56,14 +56,25 @@ void waterFunc()
     } 
     else 
     {  
-        Particle.publish("water-level-changed", "low");  
+        Particle.publish("water-level", "low");  
     }  
 
 }
 
 void tempFunc()
 {
-    int temperature = analogRead()
+    // Set the sensor reading into a variable
+    int temperature = analogRead(TEMP_PIN);
+
+    // If the temperature is too high
+    if (temperature > TEMP_LEVEL_MAX)
+    {
+        Particle.publish("temperature", "high");
+    }
+    else if(temperatuer < TEMP_LEVEL_MIN) //If the temperature is too low
+    {
+        Particle.publish("temperature", "low");
+    }
 }
 
 
