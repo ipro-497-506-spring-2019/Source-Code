@@ -2,6 +2,9 @@
 #define LIGHT_LEVEL_THRESHOLD 800 // Replace with minimum amount of light needed 
 #define WATER_LEVEL_PIN A1 // Replace A1 with water sensor pin  
 #define WATER_LEVEL_THRESHOLD 100 // Replace with your own light level  
+#define TEMP_PIN A2 // Replace A2 with pin that light sensor is connected to
+#define TEMP_LEVEL_MIN 65 //
+#define TEMP_LEVEL_MAX 85 //These two temperatures are prefered by most plants
 #define THRESHOLD_SENSITIVITY 50 // higher number = lower sensitivity, lower number = higher sensitivity 
 
 void setup() {
@@ -9,8 +12,14 @@ void setup() {
 } 
 void loop() 
 { 
-    
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////
+    lightFunc();
+    waterFunc();
+
+}
+  
+
+void lightFunc()
+{
     // Reading the light sensor to see if it is sunny enough for the plant.
     
     // value decreases as brightness increases 
@@ -28,9 +37,12 @@ void loop()
     { 
         Particle.publish("light-level-bad", "dark"); 
     }
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Reading the water sensor to see if the plant has enough water
+
+} 
+
+void waterFunc()
+{
+     // Reading the water sensor to see if the plant has enough water
     int waterLevel = analogRead(WATER_LEVEL_PIN);  
     
     if (waterlevel >= WATER_LEVEL_THRESHOLD) 
@@ -46,17 +58,12 @@ void loop()
     {  
         Particle.publish("water-level-changed", "low");  
     }  
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    
- 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-     
 
 }
-   
-   
-   
-  
-} 
+
+void tempFunc()
+{
+    int temperature = analogRead()
+}
 
 
