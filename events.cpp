@@ -45,7 +45,7 @@ void waterFunc()
      // Reading the water sensor to see if the plant has enough water
     int waterLevel = analogRead(WATER_LEVEL_PIN);  
     
-    if (waterlevel >= WATER_LEVEL_THRESHOLD) 
+    if (waterLevel >= WATER_LEVEL_THRESHOLD) 
     {  
         Particle.publish("water-level", "high");  
     
@@ -71,7 +71,7 @@ void tempFunc()
     {
         Particle.publish("temperature", "high");
     }
-    else if(temperatuer < TEMP_LEVEL_MIN) //If the temperature is too low
+    else if(temperature < TEMP_LEVEL_MIN) //If the temperature is too low
     {
         Particle.publish("temperature", "low");
     }
