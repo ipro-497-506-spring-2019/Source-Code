@@ -1,10 +1,10 @@
 // This #include statement was automatically added by the Particle IDE.
 #include <I2CSoilMoistureSensor.h>
 
-#define TEMPERATURE_MIN 65 
-#define TEMPERATURE_MAX 85
-#define SOILMOISTURE_MIN 0.41 // minimum 41% moisture
-#define SOILMOISTURE_MAX 0.8 // maximum 80% moisture
+double TEMPERATURE_MIN = 65 
+double TEMPERATURE_MAX = 85
+double SOILMOISTURE_MIN = 0.41 // minimum 41% moisture
+double SOILMOISTURE_MAX = 0.8 // maximum 80% moisture
 
 // plants prefer temperatures between 65 and 80 degrees fahrenheit
 // plants need somewhere between 41% - 80% moisture
@@ -49,11 +49,11 @@ void loop() {
     
     // if moisture level is too high
     if (moisturePercent > SOILMOISTURE_MAX) {
-        Particle.publish("soilMoisture", "Soil Moisture is TOO WET! Soil Moisture Level: " +String(moisturePercent));
+        Particle.publish("soilMoisture", "Soil Moisture is TOO WET! Soil Moisture Level: " +String(moisturePercent*100)+"%");
         delay(10000);
     // if moisture level is too low
     } else if (moisturePercent < SOILMOISTURE_MIN) {
-        Particle.publish("soilMoisture", "Soil Moisture is TOO DRY! Soil Moisture Level: " +String(moisturePercent));
+        Particle.publish("soilMoisture", "Soil Moisture is TOO DRY! Soil Moisture Level: " +String(moisturePercent*100)+"%");
         delay(10000);
     }
     
@@ -67,6 +67,9 @@ void loop() {
         delay(10000);
     }    
     
+    // resets sensors
     i2CSoilMoistureSensorDefAddr.resetSensor();
+
+    // puts device to sleep
     i2CSoilMoistureSensorDefAddr.sleep();
 }
