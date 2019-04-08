@@ -5,15 +5,18 @@ void setup();
 void initializeSS();
 void loop();
 
-Adafruit_seesaw ss;
-bool initialized;
+// **** Pin definitions ****
 int stemmaGNDPin = D3;
 int stemma3VPin = D2;
 int stemmaSCLPin = D1;
 int stemmaSDAPin = D0;
 
+// **** Moisture sensor ****
+Adafruit_seesaw ss;
+bool initialized;
+
+
 void setup() {
-  Serial.begin(9600);
   pinMode(D7, OUTPUT);
   pinMode(stemmaGNDPin, OUTPUT);
   pinMode(stemma3VPin, OUTPUT);
@@ -21,12 +24,14 @@ void setup() {
   digitalWrite(stemma3VPin, HIGH);
   pinMode(stemmaSCLPin, INPUT_PULLUP);
   pinMode(stemmaSDAPin, INPUT_PULLUP);
+
+  Serial.begin(9600);
   initializeSS();
 }
 
 void initializeSS() {
   if (!ss.begin(0x36)) {
-    Serial.println("ERROR! seesaw not found");
+    Serial.println("Couldn't initialize.");
     initialized = false;
   } else {
     initialized = true;
@@ -34,6 +39,7 @@ void initializeSS() {
 }
 
 void loop() {
+  // "it lives" status blink for testing
   digitalWrite(D7, HIGH);
   delay(500);
   digitalWrite(D7, LOW);
