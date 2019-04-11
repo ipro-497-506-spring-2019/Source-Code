@@ -1,31 +1,58 @@
 #include "application.h"
 #include "Adafruit_seesaw.h"
 
-void setup();
-void loop();
-void blinkOnOff(int, int, int);
-
 // **** Pin definitions ****
 int lightSensor3V3 = A4;
 int lightSensor = A5;
 
-Adafruit_seesaw stemma;
-char* error;
 
-struct rawDatapoint {
+// **** structs ****
+struct rawData {
   float tempC;
   uint16_t capacitance;
   int lightLevel;
-} rawData;
+  int batteryIn;
+};
+
+// this is a struct instead of #defs so users can eventually change it
+struct calibration { 
+  uint16_t dryAirHumidity; // capacitance reading reported in dry air
+  uint16_t waterHumidity; // capacitance reading reported when submerged in water
+};
+
+struct readyData {
+  float tempF;
+  int normLightLevel;
+  uint16_t normCapacitance;
+  float batteryVoltage;
+};
+
+// **** Globals ****
+Adafruit_seesaw stemma;
+char* error;
+struct calibration usercal;
+
+// **** Functions ****
+void setup();
+void loop();
+void blinkOnOff(int, int, int);
+void takeMeasurements(struct rawData *);
+void normalize(struct rawData *, struct calibration *, struct readyData *);
+void upload(struct readyData *);
 
 
 void setup() {
+  usercal = {
+    .dryAirHumidity = 330,
+    .waterHumidity = 1024
+  };
+
   pinMode(D7, OUTPUT); // status LED
 
   pinMode(lightSensor3V3, OUTPUT);
   digitalWrite(lightSensor3V3, HIGH);
 
-  Serial.begin(9600);
+  Serial.begin(11200);
 
   if (!stemma.begin(0x36)) {
     error = "Couldn't initialize stemma!";
@@ -42,11 +69,13 @@ void loop() {
 
   blinkOnOff(D7, 500, 1); // "alive and well" blink
 
-  Serial.print("seesaw started! version: ");
-  Serial.println(stemma.getVersion());
-  Serial.print("Temperature: "); Serial.print(stemma.getTemp()); Serial.println("*C");
-  Serial.print("Capacitive: "); Serial.println(stemma.touchRead(0));
-  Serial.print("Light:"); Serial.println(analogRead(lightSensor));
+  struct rawData readings;
+  takeMeasurements(&readings);
+
+  struct readyData output;
+  normalize(&readings, &usercal, &output);
+
+  upload(&output);
 }
 
 /*
@@ -59,4 +88,43 @@ void blinkOnOff(int pin, int duration, int count) {
     digitalWrite(pin, LOW);
     delay(duration);
   }
+}
+
+void takeMeasurements(struct rawData * data) {
+  data->tempC = stemma.getTemp();
+  data->capacitance = stemma.touchRead(0);
+  data->lightLevel = analogRead(lightSensor);
+  data->batteryIn = analogRead(BATT);
+}
+
+void normalize(struct rawData* data, struct calibration* calib, struct readyData* output) {
+  // how do we normalize light level? should be linear with respect to some measurable quantity
+  output->normLightLevel = data->lightLevel;
+
+  // this will probably need some experimental calibration with a thermometer since the sensor sucks
+  output->tempF = data->tempC*1.8 + 32;
+
+  // again, no idea what should be done here
+  output->normCapacitance = data->capacitance;
+
+  // Battery ADC is between 806k and 2M resistors.  Computed constant. Source:
+  // https://github.com/kennethlimcp/particle-examples/blob/master/vbatt-argon-boron/vbatt-argon-boron.ino
+  output->batteryVoltage = (float) data->batteryIn * 0.0011224;
+}
+
+void upload(struct readyData* data) {
+  // since we haven't figured out uploading yet, just output to serial
+  Serial.print("Temperature: ");
+  Serial.print(data->tempF);
+  Serial.println("F");
+  Serial.print("Light level: ");
+  Serial.print(data->normLightLevel);
+  Serial.println("/4096");
+  Serial.print("Humidity: ");
+  Serial.println(data->normCapacitance);
+  Serial.print("Battery: ");
+  Serial.print(data->batteryVoltage);
+  Serial.println("V");
+
+  Serial.println();
 }
