@@ -4,4 +4,6 @@
 # local build output
 target/
 
+# locally compiled firmware
+argon_firmware*.bin
 
