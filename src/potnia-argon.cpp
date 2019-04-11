@@ -23,7 +23,7 @@ struct calibration {
 struct readyData {
   float tempF;
   int normLightLevel;
-  uint16_t normCapacitance;
+  int moistureLevel;
   float batteryVoltage;
 };
 
@@ -42,9 +42,9 @@ void upload(struct readyData *);
 
 
 void setup() {
-  usercal = {
+  usercal = { // experimentally determined
     .dryAirHumidity = 330,
-    .waterHumidity = 1024
+    .waterHumidity = 615
   };
 
   pinMode(D7, OUTPUT); // status LED
@@ -108,8 +108,8 @@ void normalize(struct rawData* data, struct calibration* calib, struct readyData
   // this will probably need some experimental calibration with a thermometer since the sensor sucks
   output->tempF = data->tempC*1.8 + 32;
 
-  // again, no idea what should be done here
-  output->normCapacitance = data->capacitance;
+  // again, not sure what should be done here. Linearly mapped to a % humidity.
+  output->moistureLevel = map(data->capacitance, calib->dryAirHumidity, calib->waterHumidity, 0, 100);
 
   // Battery ADC is between 806k and 2M resistors.  Computed constant. Source:
   // https://github.com/kennethlimcp/particle-examples/blob/master/vbatt-argon-boron/vbatt-argon-boron.ino
@@ -124,7 +124,8 @@ void upload(struct readyData* data) {
   Serial.print(data->normLightLevel);
   Serial.println("/4096");
   Serial.print("Humidity: ");
-  Serial.println(data->normCapacitance);
+  Serial.print(data->moistureLevel);
+  Serial.println("/100");
   Serial.print("Battery: ");
   Serial.print(data->batteryVoltage);
   Serial.println("V");
@@ -144,7 +145,7 @@ void upload(struct readyData* data) {
   Particle.publish("light", lightStr, PRIVATE);
 
   char moistureStr[5];
-  snprintf(moistureStr, 5, "%.4u", data->normCapacitance);
+  snprintf(moistureStr, 5, "%.4d", data->moistureLevel);
   Particle.publish("moisture", moistureStr, PRIVATE);
 
   delay(5000); // wait a bit to make sure these actually get published before sleeping
