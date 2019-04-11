@@ -127,4 +127,23 @@ void upload(struct readyData* data) {
   Serial.println("V");
 
   Serial.println();
+
+  char battVoltageStr[5];
+  snprintf(battVoltageStr, 5, "%.2f", data->batteryVoltage);
+  Particle.publish("battery", battVoltageStr, PRIVATE);
+
+  char tempStr[6];
+  snprintf(tempStr, 6, "%.2f", data->tempF);
+  Particle.publish("temperature", tempStr, PRIVATE);
+
+  char lightStr[5];
+  snprintf(lightStr, 5, "%.4d", data->normLightLevel);
+  Particle.publish("light", lightStr, PRIVATE);
+
+  char moistureStr[5];
+  snprintf(moistureStr, 5, "%.4u", data->normCapacitance);
+  Particle.publish("moisture", moistureStr, PRIVATE);
+
+  Serial.println("Published Particle events.");
+  delay(10000);
 }
