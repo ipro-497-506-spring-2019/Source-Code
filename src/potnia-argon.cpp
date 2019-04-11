@@ -2,20 +2,25 @@
 #include "Adafruit_seesaw.h"
 
 void setup();
-void initializeSS();
 void loop();
+void blinkOnOff(int, int, int);
 
 // **** Pin definitions ****
 int lightSensor3V3 = A4;
 int lightSensor = A5;
 
-// **** Moisture sensor ****
 Adafruit_seesaw stemma;
 char* error;
 
+struct rawDatapoint {
+  float tempC;
+  uint16_t capacitance;
+  int lightLevel;
+} rawData;
+
 
 void setup() {
-  pinMode(D7, OUTPUT); // hello world
+  pinMode(D7, OUTPUT); // status LED
 
   pinMode(lightSensor3V3, OUTPUT);
   digitalWrite(lightSensor3V3, HIGH);
@@ -29,28 +34,29 @@ void setup() {
 
 void loop() {
   if (error) {
-    digitalWrite(D7, HIGH);
-    delay(50);
-    digitalWrite(D7, LOW);
-    delay(50);
-    digitalWrite(D7, HIGH);
-    delay(50);
-    digitalWrite(D7, LOW);
-    delay(50);
+    blinkOnOff(D7, 50, 20);
     Serial.println(error);
+    // TODO: report this error to the cloud
     return;
   }
 
-
-  // "it lives" status blink for testing
-  digitalWrite(D7, HIGH);
-  delay(500);
-  digitalWrite(D7, LOW);
-  delay(500);
+  blinkOnOff(D7, 500, 1); // "alive and well" blink
 
   Serial.print("seesaw started! version: ");
   Serial.println(stemma.getVersion());
   Serial.print("Temperature: "); Serial.print(stemma.getTemp()); Serial.println("*C");
   Serial.print("Capacitive: "); Serial.println(stemma.touchRead(0));
   Serial.print("Light:"); Serial.println(analogRead(lightSensor));
+}
+
+/*
+ * Blink a pin on and off `count` times, taking `duration` ms per transition.
+ */
+void blinkOnOff(int pin, int duration, int count) {
+  for (int x=0; x<count; x++) {
+    digitalWrite(pin, HIGH);
+    delay(duration);
+    digitalWrite(pin, LOW);
+    delay(duration);
+  }
 }
