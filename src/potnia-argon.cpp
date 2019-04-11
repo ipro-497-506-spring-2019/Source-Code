@@ -76,10 +76,14 @@ void loop() {
   normalize(&readings, &usercal, &output);
 
   upload(&output);
+
+  System.sleep(D7, RISING, 900); // sleep for 15m. Restart from setup on resume
 }
 
 /*
  * Blink a pin on and off `count` times, taking `duration` ms per transition.
+ * TODO: consider using the RGB LED for error states instead:
+ * https://docs.particle.io/reference/device-os/firmware/argon/#led-signaling
  */
 void blinkOnOff(int pin, int duration, int count) {
   for (int x=0; x<count; x++) {
@@ -113,7 +117,6 @@ void normalize(struct rawData* data, struct calibration* calib, struct readyData
 }
 
 void upload(struct readyData* data) {
-  // since we haven't figured out uploading yet, just output to serial
   Serial.print("Temperature: ");
   Serial.print(data->tempF);
   Serial.println("F");
@@ -130,7 +133,7 @@ void upload(struct readyData* data) {
 
   char battVoltageStr[5];
   snprintf(battVoltageStr, 5, "%.2f", data->batteryVoltage);
-  Particle.publish("battery", battVoltageStr, PRIVATE);
+  Particle.publish("battery", battVoltageStr, PRIVATE); // TODO: handle errors when publishing
 
   char tempStr[6];
   snprintf(tempStr, 6, "%.2f", data->tempF);
@@ -144,6 +147,6 @@ void upload(struct readyData* data) {
   snprintf(moistureStr, 5, "%.4u", data->normCapacitance);
   Particle.publish("moisture", moistureStr, PRIVATE);
 
+  delay(5000); // wait a bit to make sure these actually get published before sleeping
   Serial.println("Published Particle events.");
-  delay(10000);
 }
