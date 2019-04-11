@@ -12,3 +12,4 @@ This project is built with [Particle Workbench](https://www.particle.io/workbenc
 
 ## Useful features:
  - Run `Particle: Install Library` to install a Particle-supported library, doing everything needed for cloud compilation.
+ - Because the Argon is sleeping most of the time, it can be tricky to upload new code. Put it into [Safe Mode](https://docs.particle.io/tutorials/device-os/led/argon/#safe-mode) to upload easily.
