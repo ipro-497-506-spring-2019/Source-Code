@@ -38,6 +38,7 @@ void loop();
 void blinkOnOff(int, int, int);
 void takeMeasurements(struct rawData *);
 void normalize(struct rawData *, struct calibration *, struct readyData *);
+void processing(struct rawData *, struct calibration *, struct readyData *);
 void upload(struct readyData *);
 
 
@@ -74,6 +75,9 @@ void loop() {
 
   struct readyData output;
   normalize(&readings, &usercal, &output);
+
+  // passing rawData, usercalibration (dry/water humidity), and readyData to processing function
+  processing(&readings, &usercal, &output);
 
   upload(&output);
 
@@ -116,36 +120,74 @@ void normalize(struct rawData* data, struct calibration* calib, struct readyData
   output->batteryVoltage = (float) data->batteryIn * 0.0011224;
 }
 
-void upload(struct readyData* data) {
+void processing(struct rawData* data, struct calibration* calib, struct readyData* output) {
+
+  // if temperature is less than 65, publish "Temperature is too cold!"
+  // else if temperature is greater than 85, publish "Temperature is too hot!"
+  char tempStr[6];
+  snprintf(tempStr, 6, "%.2f", output->tempF);
+  if (output->tempF < 65) {
+    Particle.publish("tempMin", tempStr, PRIVATE);
+  } else if (output->tempF > 85) {
+    Particle.publish("tempMax", tempStr, PRIVATE);
+  }
+
+  // if moisture level is less than 330, publish "Soil Moisture is too dry!"
+  // else if moisture level is greater than 615, publish "Soil Moisture is too wet!"
+  char moistureStr[5];
+  snprintf(moistureStr, 5, "%.4d", output->moistureLevel);
+  if (output->moistureLevel < calib->dryAirHumidity) {
+    Particle.publish("moistureMin", moistureStr, PRIVATE);
+  } else if (output->moistureLevel >  calib->waterHumidity) {
+    Particle.publish("moistureMax", moistureStr, PRIVATE);
+  }
+
+  // if light level is less than 400, publish "Plant needs more light!"
+  char lightStr[5];
+  snprintf(lightStr, 5, "%.4d", output->normLightLevel);
+  if (output->normLightLevel < 400) {
+    Particle.publish("lightMin", lightStr, PRIVATE);
+  }
+
+  // if battery level is less than 1, publish "Battery level is very low!"
+  char battVoltageStr[5];
+  snprintf(battVoltageStr, 5, "%.2f", output->batteryVoltage);
+  if (output->batteryVoltage < 1) {
+    Particle.publish("batteryMin", battVoltageStr, PRIVATE);
+  }
+}
+
+// changed readyData* data -> readyData* output to be consistent with the rest of code
+void upload(struct readyData* output) {
   Serial.print("Temperature: ");
-  Serial.print(data->tempF);
+  Serial.print(output->tempF);
   Serial.println("F");
   Serial.print("Light level: ");
-  Serial.print(data->normLightLevel);
+  Serial.print(output->normLightLevel);
   Serial.println("/4096");
   Serial.print("Humidity: ");
-  Serial.print(data->moistureLevel);
+  Serial.print(output->moistureLevel);
   Serial.println("/100");
   Serial.print("Battery: ");
-  Serial.print(data->batteryVoltage);
+  Serial.print(output->batteryVoltage);
   Serial.println("V");
 
   Serial.println();
 
   char battVoltageStr[5];
-  snprintf(battVoltageStr, 5, "%.2f", data->batteryVoltage);
+  snprintf(battVoltageStr, 5, "%.2f", output->batteryVoltage);
   Particle.publish("battery", battVoltageStr, PRIVATE); // TODO: handle errors when publishing
 
   char tempStr[6];
-  snprintf(tempStr, 6, "%.2f", data->tempF);
+  snprintf(tempStr, 6, "%.2f", output->tempF);
   Particle.publish("temperature", tempStr, PRIVATE);
 
   char lightStr[5];
-  snprintf(lightStr, 5, "%.4d", data->normLightLevel);
+  snprintf(lightStr, 5, "%.4d", output->normLightLevel);
   Particle.publish("light", lightStr, PRIVATE);
 
   char moistureStr[5];
-  snprintf(moistureStr, 5, "%.4d", data->moistureLevel);
+  snprintf(moistureStr, 5, "%.4d", output->moistureLevel);
   Particle.publish("moisture", moistureStr, PRIVATE);
 
   delay(5000); // wait a bit to make sure these actually get published before sleeping
